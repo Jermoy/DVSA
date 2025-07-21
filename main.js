@@ -132,14 +132,18 @@ ipcMain.handle('get-settings', async () => {
     bookingMode: 'disabled',
   });
 
-  const credentialsJson = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT);
-  
-  if (credentialsJson) {
-    const sensitiveSettings = JSON.parse(credentialsJson);
-    return { ...nonSensitiveSettings, ...sensitiveSettings };
+  let sensitiveSettings = { licenceNumber: '', bookingReference: '', captchaApiKey: '' };
+
+  try {
+    const credentialsJson = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT);
+    if (credentialsJson) {
+      sensitiveSettings = JSON.parse(credentialsJson);
+    }
+  } catch (error) {
+    log.error('Could not retrieve credentials from keychain, using defaults.', error);
   }
   
-  return { ...nonSensitiveSettings, licenceNumber: '', bookingReference: '', captchaApiKey: '' };
+  return { ...nonSensitiveSettings, ...sensitiveSettings };
 });
 
 ipcMain.handle('save-settings', async (event, settings) => {
