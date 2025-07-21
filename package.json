@@ -1,6 +1,6 @@
 {
   "name": "dvsa-test-checker-pro",
-  "version": "1.1.0",
+  "version": "1.1.1",  
   "description": "Advanced DVSA driving test availability monitor with auto-booking.",
   "main": "main.js",
   "scripts": {
@@ -50,7 +50,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "jERMOY",
+        "owner": "Jermoy",
         "repo": "DVSA"
       }
     ]
