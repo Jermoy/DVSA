@@ -1,0 +1,62 @@
+/* Base Styles */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    font-size: 14px;
+}
+.container { max-width: 900px; margin: 0 auto; background: white; min-height: 100vh; display: flex; flex-direction: column; }
+header { background: #2c3e50; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+header h1 { font-size: 1.5rem; }
+main { flex: 1; padding: 1rem; }
+footer { background: #f8f9fa; padding: 0.75rem; text-align: center; font-size: 0.8rem; color: #6c757d; border-top: 1px solid #dee2e6; }
+
+/* Status Indicator */
+.status { padding: 0.5rem 1rem; border-radius: 20px; font-weight: 500; }
+.status.monitoring { background: #28a745; color: white; }
+.status.stopped { background: #dc3545; color: white; }
+
+/* Layout */
+.main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+.settings-panel, .centre-panel, .log-section { background: #fff; padding: 1.5rem; border-radius: 8px; border: 1px solid #dee2e6; }
+
+/* Forms */
+.form-group { margin-bottom: 1rem; }
+label { display: block; margin-bottom: 0.35rem; font-weight: 600; color: #495057; }
+input[type="date"], input[type="number"], input[type="password"] {
+    width: 100%; padding: 0.6rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9rem;
+}
+.autobook-warning { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 1rem; border-radius: 6px; }
+.autobook-warning p { font-size: 0.8rem; margin-top: 0.5rem; }
+
+/* Test Centre List */
+.test-centre-list { height: 350px; overflow-y: auto; border: 1px solid #dee2e6; padding: 0.5rem; border-radius: 4px; }
+.centre-item { display: block; padding: 0.5rem; border-radius: 4px; cursor: pointer; }
+.centre-item:hover { background-color: #f8f9fa; }
+.centre-item input { margin-right: 0.5rem; }
+
+/* Buttons */
+.controls, .controls-secondary { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1.5rem; }
+.controls-secondary { margin-top: 0.5rem; }
+button { padding: 0.75rem 1rem; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.btn-start { background: #28a745; color: white; }
+.btn-start:hover:not(:disabled) { background: #218838; }
+.btn-stop { background: #dc3545; color: white; }
+.btn-stop:hover:not(:disabled) { background: #c82333; }
+.btn-check { background: #007bff; color: white; }
+.btn-check:hover:not(:disabled) { background: #0069d9; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-secondary:hover:not(:disabled) { background: #5a6268; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Logging */
+.log-section h2, .centre-panel h2, .settings-panel h2 { margin-bottom: 1rem; color: #343a40; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+.log { background: #343a40; color: #f8f9fa; padding: 1rem; border-radius: 6px; height: 150px; overflow-y: auto; font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.8rem; }
+.log p { padding: 2px 0; border-bottom: 1px solid #495057; }
+.log p:last-child { border-bottom: none; }
+
+/* Update Notification */
+#notification { background: #007bff; color: white; padding: 1rem; text-align: center; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+#notification.hidden { display: none; }
+#restart-button { margin-left: 1rem; padding: 0.5rem 1rem; background: white; color: #007bff; border: none; border-radius: 4px; }

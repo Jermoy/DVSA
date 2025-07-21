@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DVSA Test Checker Pro</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="notification" class="hidden">
+        <p id="notification-message"></p>
+        <button id="restart-button" class="hidden">Restart and Install</button>
+    </div>
+    <div class="container">
+        <header>
+            <h1>DVSA Test Checker Pro</h1>
+            <div id="status" class="status stopped">⏹️ Idle</div>
+        </header>
+        <main>
+            <div class="main-content">
+                <section class="settings-panel">
+                    <h2>Settings</h2>
+                    <div class="form-group">
+                        <label>Driving Licence Number</label>
+                        <input type="password" id="licenceNumber" placeholder="Your driving licence number">
+                    </div>
+                    <div class="form-group">
+                        <label>Booking Reference</label>
+                        <input type="password" id="bookingReference" placeholder="Your test booking reference">
+                    </div>
+                    <div class="form-group">
+                        <label>Alert for tests before:</label>
+                        <input type="date" id="alertBeforeDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Check every (minutes)</label>
+                        <input type="number" id="checkInterval" min="5" value="5">
+                    </div>
+                    <div class="form-group autobook-warning">
+                        <label><input type="checkbox" id="autoBook"> 🤖 Enable Auto-Booking</label>
+                        <p><strong>Warning:</strong> Use at your own risk. This will book the first available test without confirmation.</p>
+                    </div>
+                    <div class="controls">
+                        <button id="startBtn" class="btn-start">▶️ Start Monitoring</button>
+                        <button id="stopBtn" class="btn-stop" disabled>⏹️ Stop</button>
+                    </div>
+                    <div class="controls-secondary">
+                         <button id="checkNowBtn" class="btn-check">🔍 Check Now</button>
+                         <button id="dvsaWebsiteBtn" class="btn-secondary">🌍 Open DVSA Website</button>
+                    </div>
+                </section>
+                <section class="centre-panel">
+                    <h2>Test Centres to Monitor</h2>
+                    <div id="testCentreList" class="test-centre-list">
+                        </div>
+                </section>
+            </div>
+            <section class="log-section">
+                <h2>Activity Log</h2>
+                <div class="log" id="log"></div>
+            </section>
+        </main>
+        <footer>
+            <p>Version <span id="app-version"></span>. Credentials are stored securely on your local machine.</p>
+        </footer>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+</html>
