@@ -29,17 +29,33 @@
                         <input type="password" id="bookingReference" placeholder="Your test booking reference">
                     </div>
                     <div class="form-group">
+                        <label>2Captcha API Key (Optional)</label>
+                        <input type="password" id="captchaApiKey" placeholder="Your 2Captcha API key">
+                    </div>
+                    <div class="form-group">
                         <label>Alert for tests before:</label>
                         <input type="date" id="alertBeforeDate">
+                        <div class="error-message" id="date-error-message"></div>
                     </div>
                     <div class="form-group">
                         <label>Check every (minutes)</label>
                         <input type="number" id="checkInterval" min="5" value="5">
+                        <div class="error-message" id="interval-error-message"></div>
                     </div>
-                    <div class="form-group autobook-warning">
-                        <label><input type="checkbox" id="autoBook"> 🤖 Enable Auto-Booking</label>
-                        <p><strong>Warning:</strong> Use at your own risk. This will book the first available test without confirmation.</p>
+                    
+                    <div class="form-group booking-mode-group">
+                        <label for="bookingMode">🤖 Booking Mode</label>
+                        <select id="bookingMode">
+                            <option value="disabled">Disabled (Default)</option>
+                            <option value="notify">Notify Only (Dry Run)</option>
+                            <option value="autoBook">Fully Automatic Booking</option>
+                        </select>
+                        <p class="form-hint">
+                           <b>Notify Only:</b> Finds a slot and sends a clickable notification but WILL NOT book it for you.
+                           <br><b>Fully Automatic:</b> Books the first available slot. <strong>Use at your own risk.</strong>
+                        </p>
                     </div>
+
                     <div class="controls">
                         <button id="startBtn" class="btn-start">▶️ Start Monitoring</button>
                         <button id="stopBtn" class="btn-stop" disabled>⏹️ Stop</button>
@@ -51,12 +67,19 @@
                 </section>
                 <section class="centre-panel">
                     <h2>Test Centres to Monitor</h2>
+                    <div class="form-group">
+                        <input type="search" id="centreSearchInput" placeholder="🔍 Search for a test centre...">
+                    </div>
                     <div id="testCentreList" class="test-centre-list">
                         </div>
                 </section>
             </div>
             <section class="log-section">
                 <h2>Activity Log</h2>
+                <div id="progressContainer" class="progress-container hidden">
+                    <label for="progressBar" id="progressLabel"></label>
+                    <progress id="progressBar" value="0" max="100"></progress>
+                </div>
                 <div class="log" id="log"></div>
             </section>
         </main>

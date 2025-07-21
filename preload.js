@@ -17,14 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onMonitoringStatus: (callback) => ipcRenderer.on('monitoring-status', callback),
     onUpdateAvailable: (callback) => ipcRenderer.on('update_available', callback),
     onUpdateDownloaded: (callback) => ipcRenderer.on('update_downloaded', callback),
-});
-
-// Expose app version to renderer
-ipcRenderer.invoke('get-app-version').then(version => {
-    contextBridge.exposeInMainWorld('appVersion', version);
-});
-
-// A slightly different pattern for getAppVersion for simplicity
-ipcMain.handle('get-app-version', () => {
-    return app.getVersion();
+    onCheckProgress: (callback) => ipcRenderer.on('check-progress', callback),
+    onCheckComplete: (callback) => ipcRenderer.on('check-complete', callback),
 });

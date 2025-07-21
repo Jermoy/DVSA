@@ -14,9 +14,11 @@ class DVSAProApp {
             // Inputs
             licenceNumber: document.getElementById('licenceNumber'),
             bookingReference: document.getElementById('bookingReference'),
+            captchaApiKey: document.getElementById('captchaApiKey'),
             alertBeforeDate: document.getElementById('alertBeforeDate'),
             checkInterval: document.getElementById('checkInterval'),
-            autoBook: document.getElementById('autoBook'),
+            bookingMode: document.getElementById('bookingMode'),
+            centreSearchInput: document.getElementById('centreSearchInput'),
             // Buttons
             startBtn: document.getElementById('startBtn'),
             stopBtn: document.getElementById('stopBtn'),
@@ -30,20 +32,28 @@ class DVSAProApp {
             notification: document.getElementById('notification'),
             notificationMessage: document.getElementById('notification-message'),
             appVersion: document.getElementById('app-version'),
+            // Progress elements
+            progressContainer: document.getElementById('progressContainer'),
+            progressLabel: document.getElementById('progressLabel'),
+            progressBar: document.getElementById('progressBar'),
+            // Error message elements
+            dateErrorMessage: document.getElementById('date-error-message'),
+            intervalErrorMessage: document.getElementById('interval-error-message'),
         };
     }
 
     async loadData() {
-        // Load settings
         this.settings = await window.electronAPI.getSettings();
         this.elements.licenceNumber.value = this.settings.licenceNumber;
         this.elements.bookingReference.value = this.settings.bookingReference;
+        this.elements.captchaApiKey.value = this.settings.captchaApiKey;
         this.elements.alertBeforeDate.value = this.settings.alertBeforeDate;
         this.elements.checkInterval.value = this.settings.checkInterval;
-        this.elements.autoBook.checked = this.settings.autoBook;
-        this.settings.selectedCentres.forEach(c => this.selectedCentres.add(c.id));
+        this.elements.bookingMode.value = this.settings.bookingMode;
+        if (this.settings.selectedCentres) {
+            this.settings.selectedCentres.forEach(c => this.selectedCentres.add(c.id));
+        }
 
-        // Load test centres
         this.testCentres = await window.electronAPI.getTestCentres();
         this.renderTestCentres();
         
@@ -52,8 +62,14 @@ class DVSAProApp {
     }
     
     renderTestCentres() {
+        const filterText = this.elements.centreSearchInput.value.toLowerCase();
         this.elements.testCentreList.innerHTML = '';
-        this.testCentres.forEach(centre => {
+
+        const filteredCentres = this.testCentres.filter(centre => 
+            centre.name.toLowerCase().includes(filterText)
+        );
+
+        filteredCentres.forEach(centre => {
             const label = document.createElement('label');
             label.className = 'centre-item';
             
@@ -79,10 +95,13 @@ class DVSAProApp {
 
     setupEventListeners() {
         Object.values(this.elements).forEach(el => {
-            if (el.tagName === 'INPUT') {
+            if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) {
+                // Use 'blur' for validation-heavy saves, 'change' is fine for most
                 el.addEventListener('change', () => this.saveSettings());
             }
         });
+
+        this.elements.centreSearchInput.addEventListener('input', () => this.renderTestCentres());
         this.elements.startBtn.addEventListener('click', () => window.electronAPI.startMonitoring());
         this.elements.stopBtn.addEventListener('click', () => window.electronAPI.stopMonitoring());
         this.elements.checkNowBtn.addEventListener('click', () => this.checkNow());
@@ -98,14 +117,57 @@ class DVSAProApp {
         this.elements.checkNowBtn.textContent = '🔍 Check Now';
     }
 
+    clearValidationErrors() {
+        this.elements.alertBeforeDate.classList.remove('input-error');
+        this.elements.dateErrorMessage.style.display = 'none';
+        
+        this.elements.checkInterval.classList.remove('input-error');
+        this.elements.intervalErrorMessage.style.display = 'none';
+    }
+
+    validateSettings() {
+        let isValid = true;
+        this.clearValidationErrors();
+
+        const intervalValue = parseInt(this.elements.checkInterval.value, 10);
+        if (isNaN(intervalValue) || intervalValue < 5) {
+            this.elements.checkInterval.classList.add('input-error');
+            this.elements.intervalErrorMessage.textContent = 'Interval must be a number, 5 or greater.';
+            this.elements.intervalErrorMessage.style.display = 'block';
+            isValid = false;
+        }
+
+        const selectedDateStr = this.elements.alertBeforeDate.value;
+        if (selectedDateStr) {
+            const selectedDate = new Date(selectedDateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate < today) {
+                this.elements.alertBeforeDate.classList.add('input-error');
+                this.elements.dateErrorMessage.textContent = 'Date cannot be in the past.';
+                this.elements.dateErrorMessage.style.display = 'block';
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+
     async saveSettings() {
+        if (!this.validateSettings()) {
+            this.logToUI('Validation failed. Settings not saved.', true);
+            return;
+        }
+        
         const selectedCentres = this.testCentres.filter(tc => this.selectedCentres.has(tc.id));
         const currentSettings = {
             licenceNumber: this.elements.licenceNumber.value,
             bookingReference: this.elements.bookingReference.value,
+            captchaApiKey: this.elements.captchaApiKey.value,
             alertBeforeDate: this.elements.alertBeforeDate.value,
             checkInterval: parseInt(this.elements.checkInterval.value),
-            autoBook: this.elements.autoBook.checked,
+            bookingMode: this.elements.bookingMode.value,
             selectedCentres
         };
         await window.electronAPI.saveSettings(currentSettings);
@@ -116,7 +178,6 @@ class DVSAProApp {
         window.electronAPI.onLog((event, message) => this.logToUI(message));
         window.electronAPI.onMonitoringStatus((event, isMonitoring) => this.updateMonitoringState(isMonitoring));
         
-        // Auto-update listeners
         window.electronAPI.onUpdateAvailable(() => {
             this.elements.notification.classList.remove('hidden');
             this.elements.notificationMessage.textContent = 'A new update is available. Downloading now...';
@@ -124,6 +185,19 @@ class DVSAProApp {
         window.electronAPI.onUpdateDownloaded(() => {
             this.elements.notificationMessage.textContent = 'Update downloaded. It will be installed on restart.';
             this.elements.restartBtn.classList.remove('hidden');
+});
+
+        window.electronAPI.onCheckProgress((event, { current, total, name }) => {
+            this.elements.progressContainer.classList.remove('hidden');
+            this.elements.progressLabel.textContent = `Checking ${current} of ${total}: ${name}...`;
+            this.elements.progressBar.max = total;
+            this.elements.progressBar.value = current;
+        });
+
+        window.electronAPI.onCheckComplete(() => {
+            this.elements.progressContainer.classList.add('hidden');
+            this.elements.progressBar.value = 0;
+            this.elements.progressLabel.textContent = '';
         });
     }
 

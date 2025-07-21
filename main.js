@@ -6,16 +6,57 @@ const Store = require('electron-store');
 const pie = require('puppeteer-in-electron');
 const puppeteer = require('puppeteer-core');
 const log = require('electron-log');
+const axios = require('axios');
+const keytar = require('keytar');
 
-const DVSAChecker = require('./dvsaChecker'); // Import the new checker class
-const testCentres = require('./testCentres');
+const DVSAChecker = require('./dvsaChecker');
+const { FALLBACK_TEST_CENTRES } = require('./testCentres');
+const { FALLBACK_CONFIG } = require('./config');
 
 //----- Configuration -----//
+const REMOTE_CONFIG_URL = 'https://raw.githubusercontent.com/Jermoy/DVSA/main/selectors.json';
+const REMOTE_CENTRES_URL = 'https://raw.githubusercontent.com/Jermoy/DVSA/main/test-centres.json';
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
 const store = new Store();
 let mainWindow;
-let checker; // The checker instance
+let checker;
+
+// Keytar configuration for secure credential storage
+const KEYTAR_SERVICE = app.getName();
+const KEYTAR_ACCOUNT = 'user-credentials';
+
+//----- Remote Data Fetching -----//
+async function updateRemoteConfig() {
+    log.info('Checking for new remote selector configuration...');
+    try {
+        const response = await axios.get(REMOTE_CONFIG_URL, { timeout: 5000 });
+        const remoteConfig = response.data;
+        const localVersion = store.get('config.version', '0.0.0');
+
+        if (remoteConfig && remoteConfig.version > localVersion) {
+            store.set('config', remoteConfig);
+            log.info(`Updated remote selector config from version ${localVersion} to ${remoteConfig.version}`);
+        } else {
+            log.info('Local selector configuration is up to date.');
+        }
+    } catch (error) {
+        log.error('Failed to fetch remote selector configuration. Using cached or fallback values.', error.message);
+    }
+}
+
+async function updateTestCentres() {
+    log.info('Checking for new test centre list...');
+    try {
+        const response = await axios.get(REMOTE_CENTRES_URL, { timeout: 5000 });
+        if (response.data && Array.isArray(response.data)) {
+            store.set('test-centres', response.data);
+            log.info(`Successfully fetched and cached ${response.data.length} test centres.`);
+        }
+    } catch (error) {
+        log.error('Failed to fetch remote test centre list. Using cached or fallback values.', error.message);
+    }
+}
 
 //----- Auto Updater -----//
 autoUpdater.on('update-available', () => {
@@ -43,8 +84,6 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
-  // mainWindow.webContents.openDevTools();
-
   mainWindow.once('ready-to-show', () => {
     autoUpdater.checkForUpdatesAndNotify();
   });
@@ -52,9 +91,13 @@ function createWindow() {
 
 //----- App Lifecycle -----//
 app.on('ready', async () => {
-    // Connect to the bundled Chromium instance
+    await Promise.all([
+        updateRemoteConfig(),
+        updateTestCentres()
+    ]);
+    
     await pie.initialize(app);
-    checker = new DVSAChecker(pie, puppeteer, log, mainWindow);
+    checker = new DVSAChecker(pie, puppeteer, log, mainWindow, shell, store);
     createWindow();
 });
 
@@ -75,31 +118,57 @@ app.on('before-quit', async () => {
 });
 
 //----- IPC Handlers -----//
-ipcMain.handle('get-settings', () => {
-  return store.get('settings', {
-    licenceNumber: '',
-    bookingReference: '',
+const getConfig = () => store.get('config', FALLBACK_CONFIG);
+const getTestCentres = () => store.get('test-centres', FALLBACK_TEST_CENTRES);
+
+ipcMain.handle('get-settings', async () => {
+  const nonSensitiveSettings = store.get('settings', {
     currentTestDate: '',
     alertBeforeDate: '',
     selectedCentres: [],
-    checkInterval: 5, // minutes
-    autoBook: false,
+    checkInterval: 5,
+    bookingMode: 'disabled',
   });
+
+  const credentialsJson = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT);
+  
+  if (credentialsJson) {
+    const sensitiveSettings = JSON.parse(credentialsJson);
+    return { ...nonSensitiveSettings, ...sensitiveSettings };
+  }
+  
+  return { ...nonSensitiveSettings, licenceNumber: '', bookingReference: '', captchaApiKey: '' };
 });
 
-ipcMain.handle('save-settings', (event, settings) => {
-  store.set('settings', settings);
-  return true;
+ipcMain.handle('save-settings', async (event, settings) => {
+  try {
+    const { licenceNumber, bookingReference, captchaApiKey, ...otherSettings } = settings;
+    store.set('settings', otherSettings);
+
+    const credentials = { licenceNumber, bookingReference, captchaApiKey };
+
+    if (Object.values(credentials).some(val => val)) {
+      await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT, JSON.stringify(credentials));
+    } else {
+      await keytar.deletePassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT);
+    }
+    
+    return true;
+  } catch (error) {
+    log.error('Failed to save settings:', error);
+    return false;
+  }
 });
 
 ipcMain.handle('get-test-centres', () => {
-    return testCentres;
+    return getTestCentres();
 });
 
 ipcMain.handle('start-monitoring', async () => {
   if (!checker) return false;
-  const settings = store.get('settings');
-  return await checker.start(settings);
+  const settings = await ipcMain.handle('get-settings');
+  const config = getConfig();
+  return await checker.start(settings, config);
 });
 
 ipcMain.handle('stop-monitoring', async () => {
@@ -109,15 +178,21 @@ ipcMain.handle('stop-monitoring', async () => {
 
 ipcMain.handle('check-now', async () => {
     if (!checker) return { found: false, error: "Checker not initialized." };
-    const settings = store.get('settings');
-    const result = await checker.runCheck(settings);
+    const settings = await ipcMain.handle('get-settings');
+    const config = getConfig();
+    const result = await checker.runCheck(settings, config);
 
-    if (result.found) {
+    if (result.found && settings.bookingMode === 'disabled') {
         new Notification({ title: 'Manual Check Found a Test!', body: result.message }).show();
     }
     return result;
 });
 
 ipcMain.handle('open-dvsa-website', () => {
-    shell.openExternal('https://www.gov.uk/change-driving-test');
+    const { urls } = getConfig();
+    shell.openExternal(urls.BASE_URL);
+});
+
+ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
 });

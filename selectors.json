@@ -1,0 +1,29 @@
+{
+  "version": "1.0.4",
+  "comment": "Includes selectors for intelligent error detection, session persistence, and CAPTCHA handling.",
+  "urls": {
+    "BASE_URL": "https://www.gov.uk/change-driving-test",
+    "MANAGE_BOOKING_URL": "https://driverpracticaltest.dvsa.gov.uk/manage-booking",
+    "LOGGED_IN_URL": "https://driverpracticaltest.dvsa.gov.uk/manage-booking/manage"
+  },
+  "selectors": {
+    "LICENCE_NUMBER_INPUT": "#driving-licence-number",
+    "BOOKING_REFERENCE_INPUT": "#application-reference-number",
+    "CONTINUE_BUTTON": "#continue-button",
+    "ERROR_SUMMARY_SELECTOR": ".govuk-error-summary",
+    "CAPTCHA_IFRAME": "iframe[src*='recaptcha']",
+    "CAPTCHA_CHALLENGE": ".g-recaptcha",
+    "CHANGE_TEST_DATE_LINK": "a[href*='/manage-booking/choose-time']",
+    "TEST_CENTRE_INPUT": "#test-centre-name",
+    "FIND_CENTRE_BUTTON": "#find-test-centre-button",
+    "SELECT_CENTRE_RADIO_PATTERN": "input[name='test-centre'][value='{centreId}']",
+    "CONTINUE_TO_CALENDAR_BUTTON": "#test-centre-submit",
+    "CALENDAR_NEXT_MONTH_BUTTON": "a.BookingCalendar-nav--next",
+    "AVAILABLE_DATE_ANCHOR": "td.BookingCalendar-date--bookable > a",
+    "CALENDAR_MONTH_YEAR_HEADER": "h2.BookingCalendar-monthYear",
+    "FIRST_AVAILABLE_SLOT_RADIO": "input[name='slot'][type='radio']",
+    "CONFIRM_SLOT_BUTTON": "#slot-submit",
+    "FINAL_CONFIRMATION_CHECKBOX": "#change-confirmation",
+    "CONFIRM_CHANGE_BUTTON": "#booking-change-submit"
+  }
+}
