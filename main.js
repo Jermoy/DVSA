@@ -13,6 +13,9 @@ const DVSAChecker = require('./dvsaChecker');
 const { FALLBACK_TEST_CENTRES } = require('./testCentres');
 const { FALLBACK_CONFIG } = require('./config');
 
+// Initialize puppeteer-in-electron at the top level
+pie.initialize(app);
+
 //----- Configuration -----//
 const REMOTE_CONFIG_URL = 'https://raw.githubusercontent.com/Jermoy/DVSA/main/selectors.json';
 const REMOTE_CENTRES_URL = 'https://raw.githubusercontent.com/Jermoy/DVSA/main/test-centres.json';
@@ -96,7 +99,6 @@ app.on('ready', async () => {
         updateTestCentres()
     ]);
     
-    await pie.initialize(app);
     checker = new DVSAChecker(pie, puppeteer, log, mainWindow, shell, store);
     createWindow();
 });
