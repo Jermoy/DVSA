@@ -1,6 +1,6 @@
 {
   "name": "dvsa-test-checker-pro",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Advanced DVSA driving test availability monitor with auto-booking.",
   "main": "main.js",
   "scripts": {
@@ -30,6 +30,9 @@
   },
   "build": {
     "appId": "com.jermoycummings.dvsatestchecker",
+    "asarUnpack": [
+      "keytar"
+    ],
     "productName": "DVSA Test Checker Pro",
     "directories": {
       "output": "dist"
