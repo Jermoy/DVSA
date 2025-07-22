@@ -2,7 +2,7 @@
   "version": "1.0.4",
   "comment": "Includes selectors for intelligent error detection, session persistence, and CAPTCHA handling.",
   "urls": {
-    "BASE_URL": "https://www.gov.uk/change-driving-test",
+    "BASE_URL": "https://driverpracticaltest.dvsa.gov.uk/login",
     "MANAGE_BOOKING_URL": "https://driverpracticaltest.dvsa.gov.uk/manage-booking",
     "LOGGED_IN_URL": "https://driverpracticaltest.dvsa.gov.uk/manage-booking/manage"
   },
